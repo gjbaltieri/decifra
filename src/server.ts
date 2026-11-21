@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express'
 import { db } from './database/connection'
 import { createUser } from './repository/userRepository';
+import bcrypt from 'bcrypt'
 
 const app = express()
 app.use(express.json())
@@ -9,7 +10,6 @@ app.use(express.json())
 app.get('/health', async (req, res) => {
     try {
         const result = await db.query('SELECT NOW()');
-
         res.status(200).json({
             connected: true,
             timestamp: result.rows[0].now
@@ -25,10 +25,13 @@ app.get('/health', async (req, res) => {
 
 app.post('/adduser', async (req: Request, res: Response) => {
     try {
-        const { name, email } = req.body
-        console.log(name, email)
-        const user = await createUser(name, email)
+
+        const { username, email, password } = req.body
+        const passHash = await bcrypt.hash(password, 10)
+        const user = await createUser(username, email, passHash)
         return res.status(201).json(user)
+
+
     } catch (error) {
         console.error(error)
         return res.status(500).json({
