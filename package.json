@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/server.js",
   "scripts": {
-    "test": "tsx --test tests/*.test.ts",
+    "test": "jest",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
@@ -25,8 +25,11 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/pg": "^8.23.1",
-    "typescript": "^7.0.2"
+    "jest": "^30.5.2",
+    "ts-jest": "^29.4.15",
+    "typescript": "^6.0.3"
   }
 }
