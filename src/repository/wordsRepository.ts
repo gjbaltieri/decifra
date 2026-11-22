@@ -17,7 +17,7 @@ export async function findTodayGame(userId: string) {
         FROM games
         JOIN words ON words.id = games.word_id
         WHERE games.user_id = $1
-        AND words.date = CURRENT_DATE
+        AND words.date = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date
         LIMIT 1;`,
         [userId]
     )
