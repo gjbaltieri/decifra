@@ -9,6 +9,8 @@ import { authMiddleware, AuthRequest } from "./middlewares/authMiddleware";
 import { createAttempt, createGame, findAttemptsByGameId, findTodayGame, findTodayWord, updateGameStatus } from './repository/wordsRepository';
 import { checkGuess } from './services/checkGuess';
 import { normalizeGuess, resolveStatus } from './services/gameServices';
+import fs from "node:fs";
+import path from "node:path";
 
 export const app = express()
 app.use(express.json())
@@ -104,7 +106,11 @@ app.get('/game/findtodaygame', authMiddleware, async (req: AuthRequest, res: Res
             guess: attempt.guess,
             feedback: checkGuess(game.word, attempt.guess),
         }));
-        return res.status(200).json({ status: game.status, attempts: formattedAttempts });
+        return res.status(200).json({
+            status: game.status,
+            attempts: formattedAttempts,
+            ...(game.status !== "playing" && game.word && { word: game.word }),
+        });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: 'Erro ao buscar jogo do dia' });
@@ -173,6 +179,16 @@ app.post("/game/guess", authMiddleware, async (req: AuthRequest, res) => {
         return res.status(500).json({ error: "Erro interno ao processar palpite" });
     }
 });
+
+const frontendPath = path.resolve(process.cwd(), "frontend", "dist");
+
+if (fs.existsSync(frontendPath)) {
+    app.use(express.static(frontendPath));
+    app.use((req, res, next) => {
+        if (req.method !== "GET") return next();
+        res.sendFile(path.join(frontendPath, "index.html"));
+    });
+}
 
 
 

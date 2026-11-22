@@ -2,7 +2,7 @@ import { db } from '../database/connection'
 
 export async function findTodayWord() {
     const word = await db.query(
-        `SELECT id, word FROM words WHERE date = CURRENT_DATE;`
+        `SELECT id, word FROM words WHERE date = (NOW() AT TIME ZONE 'America/Sao_Paulo')::date;; `
     )
     return word.rows[0]
 }
@@ -13,6 +13,7 @@ export async function findTodayGame(userId: string) {
         games.id,
         games.status,
         games.word_id,
+        words.word,
         games.created_at
         FROM games
         JOIN words ON words.id = games.word_id
