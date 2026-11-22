@@ -46,7 +46,26 @@ describe('Autenticação (Login, Cadastro e Logout)', () => {
 
     // Assert
     expect(
-      await screen.findByRole('grid', { name: /tabuleiro do termo/i })
+      screen.getByRole('heading', { name: 'DECIFRA' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/desenvolvido por gustavo baltieri/i)
+    ).toBeInTheDocument();
+    const githubLink = screen.getByRole('link', { name: /github/i });
+    expect(githubLink).toHaveAttribute('href', 'https://github.com/gjbaltieri');
+    expect(githubLink).toHaveAttribute('target', '_blank');
+    expect(githubLink).toHaveAttribute('rel', 'noopener noreferrer');
+
+    const linkedinLink = screen.getByRole('link', { name: /linkedin/i });
+    expect(linkedinLink).toHaveAttribute(
+      'href',
+      'https://www.linkedin.com/in/gustavo-baltieri'
+    );
+    expect(linkedinLink).toHaveAttribute('target', '_blank');
+    expect(linkedinLink).toHaveAttribute('rel', 'noopener noreferrer');
+
+    expect(
+      await screen.findByRole('grid', { name: /tabuleiro do decifra/i })
     ).toBeInTheDocument();
 
     expect(loginRequestBody).toEqual({
@@ -99,7 +118,26 @@ describe('Autenticação (Login, Cadastro e Logout)', () => {
 
     // Assert
     expect(
-      await screen.findByRole('grid', { name: /tabuleiro do termo/i })
+      screen.getByRole('heading', { name: 'DECIFRA' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/desenvolvido por gustavo baltieri/i)
+    ).toBeInTheDocument();
+    const githubLink = screen.getByRole('link', { name: /github/i });
+    expect(githubLink).toHaveAttribute('href', 'https://github.com/gjbaltieri');
+    expect(githubLink).toHaveAttribute('target', '_blank');
+    expect(githubLink).toHaveAttribute('rel', 'noopener noreferrer');
+
+    const linkedinLink = screen.getByRole('link', { name: /linkedin/i });
+    expect(linkedinLink).toHaveAttribute(
+      'href',
+      'https://www.linkedin.com/in/gustavo-baltieri'
+    );
+    expect(linkedinLink).toHaveAttribute('target', '_blank');
+    expect(linkedinLink).toHaveAttribute('rel', 'noopener noreferrer');
+
+    expect(
+      await screen.findByRole('grid', { name: /tabuleiro do decifra/i })
     ).toBeInTheDocument();
 
     expect(registerRequestBody).toEqual({
@@ -131,7 +169,7 @@ describe('Autenticação (Login, Cadastro e Logout)', () => {
     ).toBeInTheDocument();
     expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();
     expect(
-      screen.queryByRole('grid', { name: /tabuleiro do termo/i })
+      screen.queryByRole('grid', { name: /tabuleiro do decifra/i })
     ).not.toBeInTheDocument();
   });
 
@@ -170,7 +208,7 @@ describe('Autenticação (Login, Cadastro e Logout)', () => {
     });
 
     render(<App />);
-    await screen.findByRole('grid', { name: /tabuleiro do termo/i });
+    await screen.findByRole('grid', { name: /tabuleiro do decifra/i });
 
     // Act
     await user.click(screen.getByRole('button', { name: /sair/i }));

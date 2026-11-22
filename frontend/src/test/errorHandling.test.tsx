@@ -47,7 +47,7 @@ describe('Tratamento de erros de sessão e API', () => {
     });
 
     render(<App />);
-    await screen.findByRole('grid', { name: /tabuleiro do termo/i });
+    await screen.findByRole('grid', { name: /tabuleiro do decifra/i });
 
     // Act
     await user.keyboard('TERMO{Enter}');
@@ -98,7 +98,7 @@ describe('Tratamento de erros de sessão e API', () => {
 
     // Assert — tabuleiro carregado após retry
     expect(
-      await screen.findByRole('grid', { name: /tabuleiro do termo/i })
+      await screen.findByRole('grid', { name: /tabuleiro do decifra/i })
     ).toBeInTheDocument();
   });
 
@@ -113,7 +113,7 @@ describe('Tratamento de erros de sessão e API', () => {
     });
 
     render(<App />);
-    await screen.findByRole('grid', { name: /tabuleiro do termo/i });
+    await screen.findByRole('grid', { name: /tabuleiro do decifra/i });
 
     // Act
     await user.keyboard('TERMO{Enter}');
@@ -123,7 +123,7 @@ describe('Tratamento de erros de sessão e API', () => {
       await screen.findByText(/erro interno no servidor/i)
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('grid', { name: /tabuleiro do termo/i })
+      screen.getByRole('grid', { name: /tabuleiro do decifra/i })
     ).toBeInTheDocument();
     expect(localStorage.getItem(TOKEN_STORAGE_KEY)).not.toBeNull();
   });

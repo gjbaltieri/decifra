@@ -8,13 +8,65 @@ import {
   seedAuthenticatedSession,
 } from './helpers';
 
-describe('Fim de partida (Vitória e Derrota)', () => {
-  it('exibe modal de vitória com a palavra secreta, copia resultado em emojis e bloqueia novas entradas', async () => {
+function mockCanvas2D() {
+  const fillTextCalls: string[] = [];
+  const fakeCtx = {
+    fillStyle: '',
+    strokeStyle: '',
+    lineWidth: 1,
+    font: '',
+    textAlign: 'center',
+    textBaseline: 'middle',
+    fillRect: vi.fn(),
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    quadraticCurveTo: vi.fn(),
+    closePath: vi.fn(),
+    fill: vi.fn(),
+    stroke: vi.fn(),
+    fillText: vi.fn((text: string) => {
+      fillTextCalls.push(text);
+    }),
+  } as unknown as CanvasRenderingContext2D;
+
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+    fakeCtx as never
+  );
+  vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((cb) => {
+    cb(new Blob(['fake-png-binary'], { type: 'image/png' }));
+  });
+
+  return { fillTextCalls, fakeCtx };
+}
+
+describe('Fim de partida (Vitória, Derrota e Compartilhamento de Imagem PNG)', () => {
+  it('exibe modal de vitória com a palavra secreta, copia imagem PNG do resultado para o clipboard e bloqueia novas entradas', async () => {
     // Arrange
     const user = userEvent.setup();
-    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    const { fillTextCalls } = mockCanvas2D();
+
+    const clipboardWriteMock = vi.fn().mockResolvedValue(undefined);
+    class FakeClipboardItem {
+      public readonly items: Record<string, Blob>;
+      constructor(items: Record<string, Blob>) {
+        this.items = items;
+      }
+    }
+    Object.defineProperty(globalThis, 'ClipboardItem', {
+      value: FakeClipboardItem,
+      configurable: true,
+    });
     Object.defineProperty(navigator, 'clipboard', {
-      value: { writeText: writeTextMock },
+      value: { write: clipboardWriteMock },
+      configurable: true,
+    });
+    Object.defineProperty(navigator, 'canShare', {
+      value: undefined,
+      configurable: true,
+    });
+    Object.defineProperty(navigator, 'share', {
+      value: undefined,
       configurable: true,
     });
 
@@ -39,12 +91,12 @@ describe('Fim de partida (Vitória e Derrota)', () => {
     });
 
     render(<App />);
-    await screen.findByRole('grid', { name: /tabuleiro do termo/i });
+    await screen.findByRole('grid', { name: /tabuleiro do decifra/i });
 
     // Act — envia palpite vencedor
     await user.keyboard('TERMO{Enter}');
 
-    // Assert — modal de vitória aparece após a animação de flip com a palavra secreta
+    // Assert — modal de vitória aparece com a palavra secreta
     const dialog = await screen.findByRole('dialog', {}, { timeout: 2500 });
     expect(
       within(dialog).getByRole('heading', { name: /você acertou!/i })
@@ -54,16 +106,24 @@ describe('Fim de partida (Vitória e Derrota)', () => {
       expect(within(dialog).getByText(letter)).toBeInTheDocument();
     }
 
-    // Act — clica em Compartilhar para copiar resultado em emojis
+    // Act — clica em Compartilhar resultado para gerar e copiar imagem PNG
     await user.click(
-      within(dialog).getByRole('button', { name: /compartilhar/i })
+      within(dialog).getByRole('button', { name: /compartilhar resultado/i })
     );
 
-    // Assert — clipboard recebe o texto formatado em emojis
-    expect(writeTextMock).toHaveBeenCalledTimes(1);
-    expect(writeTextMock).toHaveBeenCalledWith('Joguei TERMO 1/6\n\n🟩🟩🟩🟩🟩');
+    // Assert — canvas desenhou título DECIFRA, placar 1/6, assinatura do autor e não desenhou a palavra secreta
+    expect(fillTextCalls).toContain('DECIFRA');
+    expect(fillTextCalls.some((t) => t.includes('1/6'))).toBe(true);
+    expect(fillTextCalls).toContain(
+      'Desenvolvido por Gustavo Baltieri • github.com/gjbaltieri'
+    );
+    expect(fillTextCalls).not.toContain('TERMO');
+
+    expect(clipboardWriteMock).toHaveBeenCalledTimes(1);
     expect(
-      await screen.findByText(/resultado copiado para a área de transferência!/i)
+      await screen.findByText(
+        /imagem do resultado copiada para a área de transferência!/i
+      )
     ).toBeInTheDocument();
 
     // Act — fecha o modal e tenta digitar / enviar novamente
@@ -80,12 +140,19 @@ describe('Fim de partida (Vitória e Derrota)', () => {
     expect(guessCalls).toBe(1);
   });
 
-  it('exibe modal de derrota com a palavra secreta retornada pela API, copia X/6 e bloqueia entradas', async () => {
+  it('exibe modal de derrota com a palavra secreta retornada pela API, compartilha imagem via Web Share API (X/6) e bloqueia entradas', async () => {
     // Arrange
     const user = userEvent.setup();
-    const writeTextMock = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, 'clipboard', {
-      value: { writeText: writeTextMock },
+    const { fillTextCalls } = mockCanvas2D();
+
+    const shareMock = vi.fn().mockResolvedValue(undefined);
+    const canShareMock = vi.fn().mockReturnValue(true);
+    Object.defineProperty(navigator, 'canShare', {
+      value: canShareMock,
+      configurable: true,
+    });
+    Object.defineProperty(navigator, 'share', {
+      value: shareMock,
       configurable: true,
     });
 
@@ -113,7 +180,7 @@ describe('Fim de partida (Vitória e Derrota)', () => {
     });
 
     render(<App />);
-    await screen.findByRole('grid', { name: /tabuleiro do termo/i });
+    await screen.findByRole('grid', { name: /tabuleiro do decifra/i });
 
     // Act — envia 6ª e última tentativa sem acertar
     await user.keyboard('MUNDO{Enter}');
@@ -130,24 +197,26 @@ describe('Fim de partida (Vitória e Derrota)', () => {
       expect(within(dialog).getByText(letter)).toBeInTheDocument();
     }
 
-    // Act — copia resultado
+    // Act — clica em Compartilhar resultado
     await user.click(
-      within(dialog).getByRole('button', { name: /compartilhar/i })
+      within(dialog).getByRole('button', { name: /compartilhar resultado/i })
     );
 
-    // Assert — formato X/6 com emojis corretos
-    expect(writeTextMock).toHaveBeenCalledWith(
-      [
-        'Joguei TERMO X/6',
-        '',
-        '⬛⬛⬛⬛⬛',
-        '⬛⬛⬛⬛⬛',
-        '⬛⬛⬛⬛⬛',
-        '⬛⬛⬛⬛⬛',
-        '⬛⬛⬛⬛⬛',
-        '⬛🟨⬛⬛🟩',
-      ].join('\n')
-    );
+    // Assert — Web Share API chamada com arquivo PNG e título DECIFRA
+    expect(fillTextCalls).toContain('DECIFRA');
+    expect(fillTextCalls.some((t) => t.includes('X/6'))).toBe(true);
+    expect(canShareMock).toHaveBeenCalledTimes(1);
+    expect(shareMock).toHaveBeenCalledTimes(1);
+    const sharedArg = shareMock.mock.calls[0][0] as {
+      title: string;
+      files: File[];
+    };
+    expect(sharedArg.title).toBe('DECIFRA');
+    expect(sharedArg.files[0].name).toBe('decifra-resultado.png');
+    expect(sharedArg.files[0].type).toBe('image/png');
+    expect(
+      await screen.findByText(/resultado do decifra compartilhado!/i)
+    ).toBeInTheDocument();
 
     // Fecha modal e verifica bloqueio do teclado
     await user.click(

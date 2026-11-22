@@ -41,7 +41,7 @@ export function Board({
     <div
       className="flex flex-col items-center justify-center gap-1.5 sm:gap-2 my-auto py-2 select-none"
       role="grid"
-      aria-label="Tabuleiro do Termo"
+      aria-label="Tabuleiro do Decifra"
     >
       {rows.map((rowIndex) => {
         const submittedAttempt = attempts[rowIndex];

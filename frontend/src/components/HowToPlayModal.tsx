@@ -37,8 +37,9 @@ export function HowToPlayModal({ isOpen, onClose }: HowToPlayModalProps) {
 
         <div className="space-y-3 text-sm leading-relaxed text-zinc-300">
           <p>
-            Descubra a palavra secreta do dia em até <strong>6 tentativas</strong>.
-            Cada palpite deve ser uma palavra de <strong>5 letras</strong>.
+            No <strong>DECIFRA</strong>, descubra a palavra secreta do dia em até{' '}
+            <strong>6 tentativas</strong>. Cada palpite deve ser uma palavra de{' '}
+            <strong>5 letras</strong>.
           </p>
           <p>
             Após cada tentativa, a cor das peças mostrará o quão perto você

@@ -328,7 +328,7 @@ export function useTermoGame({
         })
         .join('')
     );
-    return `Joguei TERMO ${triesLabel}\n\n${emojiRows.join('\n')}`;
+    return `Joguei DECIFRA ${triesLabel}\n\n${emojiRows.join('\n')}`;
   }, [attempts, status]);
 
   return {

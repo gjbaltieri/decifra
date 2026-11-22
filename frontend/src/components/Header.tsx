@@ -59,7 +59,7 @@ export function Header({
 
         {/* Título central */}
         <h1 className="select-none text-2xl sm:text-3xl font-extrabold tracking-[0.22em] text-zinc-100">
-          TERMO
+          DECIFRA
         </h1>
 
         {/* Usuário e Logout à direita */}

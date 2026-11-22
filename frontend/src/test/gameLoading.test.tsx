@@ -24,7 +24,7 @@ describe('Carregamento da partida do dia', () => {
 
     // Assert
     const board = await screen.findByRole('grid', {
-      name: /tabuleiro do termo/i,
+      name: /tabuleiro do decifra/i,
     });
     const rows = within(board).getAllByRole('row');
     const cells = within(board).getAllByRole('gridcell');
@@ -61,7 +61,7 @@ describe('Carregamento da partida do dia', () => {
 
     // Assert
     const board = await screen.findByRole('grid', {
-      name: /tabuleiro do termo/i,
+      name: /tabuleiro do decifra/i,
     });
     const rows = within(board).getAllByRole('row');
     const firstRowCells = within(rows[0]).getAllByRole('gridcell');

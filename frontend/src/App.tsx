@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AuthModal } from './components/AuthModal';
 import { Board } from './components/Board';
+import { Footer } from './components/Footer';
 import { GameOverModal } from './components/GameOverModal';
 import { Header } from './components/Header';
 import { HowToPlayModal } from './components/HowToPlayModal';
@@ -9,6 +10,7 @@ import { ToastContainer } from './components/ToastContainer';
 import { useAuth } from './hooks/useAuth';
 import { useTermoGame } from './hooks/useTermoGame';
 import { useToast } from './hooks/useToast';
+import { shareResultImage } from './utils/shareResultImage';
 
 export function App() {
   const { toasts, showToast, dismissToast } = useToast();
@@ -44,7 +46,6 @@ export function App() {
     handleBackspace,
     handleMoveCursor,
     submitGuess,
-    generateShareText,
   } = useTermoGame({
     user,
     isAuthenticated,
@@ -116,14 +117,22 @@ export function App() {
   ]);
 
   const handleCopyShare = useCallback(async () => {
-    const shareText = generateShareText();
     try {
-      await navigator.clipboard.writeText(shareText);
-      showToast('Resultado copiado para a área de transferência!', 'success');
+      const outcome = await shareResultImage({ attempts, status });
+      if (outcome === 'shared') {
+        showToast('Resultado do DECIFRA compartilhado!', 'success');
+      } else if (outcome === 'copied') {
+        showToast(
+          'Imagem do resultado copiada para a área de transferência!',
+          'success'
+        );
+      } else {
+        showToast('Imagem decifra-resultado.png baixada com sucesso!', 'success');
+      }
     } catch {
-      showToast('Não foi possível copiar automaticamente.', 'error');
+      showToast('Não foi possível gerar a imagem de resultado.', 'error');
     }
-  }, [generateShareText, showToast]);
+  }, [attempts, status, showToast]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-[#121213] text-zinc-100">
@@ -217,6 +226,8 @@ export function App() {
         onClose={() => setIsGameOverModalOpen(false)}
         onCopyShare={handleCopyShare}
       />
+
+      <Footer />
     </div>
   );
 }

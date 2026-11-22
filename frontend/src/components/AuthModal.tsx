@@ -46,17 +46,17 @@ export function AuthModal({ isSubmitting, onLogin, onRegister }: AuthModalProps)
         {/* Mini logo decorativa */}
         <div className="mb-6 flex flex-col items-center">
           <div className="mb-3 flex gap-1.5">
-            {['T', 'E', 'R', 'M', 'O'].map((letter, idx) => {
+            {['D', 'E', 'C', 'I', 'F', 'R', 'A'].map((letter, idx) => {
               const bg =
-                idx === 0 || idx === 4
+                idx === 0 || idx === 5
                   ? 'bg-[#3aa394] border-[#3aa394]'
-                  : idx === 2
+                  : idx === 2 || idx === 6
                     ? 'bg-[#d3ad69] border-[#d3ad69]'
                     : 'bg-[#312a2c] border-[#312a2c]';
               return (
                 <span
-                  key={letter}
-                  className={`flex h-10 w-10 items-center justify-center rounded-lg border-2 text-lg font-extrabold text-white shadow-sm ${bg}`}
+                  key={`${letter}-${idx}`}
+                  className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg border-2 text-base sm:text-lg font-extrabold text-white shadow-sm ${bg}`}
                 >
                   {letter}
                 </span>
@@ -65,8 +65,8 @@ export function AuthModal({ isSubmitting, onLogin, onRegister }: AuthModalProps)
           </div>
           <p className="text-center text-sm text-zinc-400">
             {mode === 'login'
-              ? 'Entre na sua conta para jogar a palavra do dia'
-              : 'Crie sua conta para salvar suas tentativas diárias'}
+              ? 'Entre na sua conta para jogar o Decifra do dia'
+              : 'Crie sua conta para salvar suas tentativas no Decifra'}
           </p>
         </div>
 

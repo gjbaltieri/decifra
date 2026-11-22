@@ -20,7 +20,7 @@ describe('Jogabilidade (teclado físico e virtual)', () => {
 
     render(<App />);
     const board = await screen.findByRole('grid', {
-      name: /tabuleiro do termo/i,
+      name: /tabuleiro do decifra/i,
     });
     const firstRowCells = within(within(board).getAllByRole('row')[0]).getAllByRole(
       'gridcell'
@@ -63,7 +63,7 @@ describe('Jogabilidade (teclado físico e virtual)', () => {
     });
 
     render(<App />);
-    await screen.findByRole('grid', { name: /tabuleiro do termo/i });
+    await screen.findByRole('grid', { name: /tabuleiro do decifra/i });
 
     // Act
     await user.keyboard('SOL{Enter}');
@@ -100,7 +100,7 @@ describe('Jogabilidade (teclado físico e virtual)', () => {
 
     render(<App />);
     const board = await screen.findByRole('grid', {
-      name: /tabuleiro do termo/i,
+      name: /tabuleiro do decifra/i,
     });
 
     // Act
