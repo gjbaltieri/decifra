@@ -9,6 +9,15 @@ export interface AuthRequest extends Request {
 }
 
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+        return res.status(401).json({ error: "Token não fornecido" });
+    }
+
+    if (!authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Token inválido ou malformado" });
+    }
     const token = req.headers.authorization?.split(" ")[1];
     const secret = process.env.JWT_SECRET;
 

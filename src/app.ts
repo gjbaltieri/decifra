@@ -156,7 +156,9 @@ app.post("/game/guess", authMiddleware, async (req: AuthRequest, res) => {
         const status = resolveStatus(validGuess, todayWord.word, attemptNumber);
         // Calcula o feedback e verifica vitória/derrota
         const feedback = checkGuess(todayWord.word, validGuess);
-
+        if (status !== "playing") {
+            await updateGameStatus(game.id, status);
+        }
         // Retorna o resultado
         return res.status(201).json({
             attemptNumber,
