@@ -1,4 +1,4 @@
-# 🟩 DECIFRA
+# DECIFRA
 
 Jogo diário de adivinhação de palavras de 5 letras (inspirado no Termo/Wordle), desenvolvido como aplicação fullstack com foco em arquitetura backend, persistência de estado em banco relacional e testes automatizados.
 
