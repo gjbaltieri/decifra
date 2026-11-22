@@ -1,5 +1,11 @@
 import { db } from '../database/connection';
 
+export interface User {
+    id: string
+    username: string,
+    password_hash: string,
+}
+
 export async function createUser(username: string, password_hash: string) {
     const result = await db.query(
         `INSERT INTO users ( username, password_hash)
@@ -10,15 +16,6 @@ export async function createUser(username: string, password_hash: string) {
 
     return result.rows[0];
 }
-
-export async function findAllUsers() {
-    const result = await db.query(
-        'SELECT * FROM users'
-    );
-
-    return result.rows;
-}
-
 
 export async function findUser(username: string) {
     const result = await db.query(
