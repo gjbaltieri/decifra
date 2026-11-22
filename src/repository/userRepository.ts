@@ -1,11 +1,11 @@
 import { db } from '../database/connection';
 
-export async function createUser(username: string, email: string, password: string) {
+export async function createUser(username: string, password_hash: string) {
     const result = await db.query(
-        `INSERT INTO users ( username, email, password_hash)
-         VALUES ($1, $2,$3)
-         RETURNING *`,
-        [username, email, password]
+        `INSERT INTO users ( username, password_hash)
+         VALUES ($1, $2)
+         RETURNING id, username, created_at`,
+        [username, password_hash]
     );
 
     return result.rows[0];

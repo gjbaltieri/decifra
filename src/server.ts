@@ -6,7 +6,6 @@ import bcrypt from 'bcrypt'
 const app = express()
 app.use(express.json())
 
-
 app.get('/health', async (req, res) => {
     try {
         const result = await db.query('SELECT NOW()');
@@ -24,11 +23,11 @@ app.get('/health', async (req, res) => {
 })
 app.post("/login", async (req, res) => {
     try {
-        const { username, password } = req.body
-        if (!username || !password) {
+        const { username, password } = req.body ?? {}
+        if (typeof username !== "string" || typeof password !== 'string' || !username.trim() || !password.trim()) {
             return res.status(400).json({ error: "Username e password são obrigatórios" });
         }
-        const user = await findUser(username)
+        const user = await findUser(username.trim())
         if (!user) {
             return res.status(401).json({
                 error: 'Usuario ou senha invalido'
@@ -56,13 +55,27 @@ app.post("/login", async (req, res) => {
 app.post('/adduser', async (req: Request, res: Response) => {
     try {
 
-        const { username, email, password } = req.body
+        const { username, password } = req.body
+        if (typeof username !== "string"
+            || typeof password !== 'string'
+            || !username.trim()
+            || !password.trim()) {
+            return res.status(400).json({ error: "Username e senha são obrigatórios" });
+        }
+        if (password.length < 6) {
+            return res.status(422).json({ error: "A senha deve conter ao menos 6 caracteres." })
+        }
+
+
         const passHash = await bcrypt.hash(password, 10)
-        const user = await createUser(username, email, passHash)
+        const user = await createUser(username.trim(), passHash)
         return res.status(201).json(user)
 
 
-    } catch (error) {
+    } catch (error: any) {
+        if (error.code === '23505') {
+            return res.status(409).json({ message: 'Usuário já cadastrado' })
+        }
         console.error(error)
         return res.status(500).json({
             error: 'Erro ao criar usuário'

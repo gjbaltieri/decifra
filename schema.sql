@@ -1,7 +1,6 @@
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(50) UNIQUE NOT NULL,
-  email VARCHAR(50) UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
+  password_hash TEXT NOT NULL CHECK (LENGTH(password_hash) >= 6),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
