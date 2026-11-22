@@ -46,6 +46,15 @@ describe('Jogabilidade (teclado físico e virtual)', () => {
     expect(firstRowCells[1]).toHaveTextContent('A');
     expect(firstRowCells[2]).toHaveTextContent('');
     expect(firstRowCells[3]).toHaveTextContent('');
+
+    // Assert — disposição das teclas de ação à direita (Backspace após L na fileira 2 e Enter após M na fileira 3)
+    const virtualKeyboard = screen.getByLabelText(/teclado virtual/i);
+    const kbButtons = within(virtualKeyboard).getAllByRole('button');
+    const labels = kbButtons.map((btn) => btn.getAttribute('aria-label'));
+    expect(labels.indexOf('Apagar letra')).toBe(labels.indexOf('Letra L') + 1);
+    expect(labels.indexOf('Confirmar palpite')).toBe(
+      labels.indexOf('Letra M') + 1
+    );
   });
 
   it('impede o envio e exibe aviso quando o palpite tem menos de 5 letras', async () => {

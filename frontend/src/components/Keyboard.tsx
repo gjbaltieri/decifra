@@ -10,8 +10,8 @@ interface KeyboardProps {
 
 const KEYBOARD_ROWS: string[][] = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-  ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACKSPACE'],
+  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'BACKSPACE'],
+  ['Z', 'X', 'C', 'V', 'B', 'N', 'M', 'ENTER'],
 ];
 
 function getKeyColorClass(status?: LetterStatus): string {
@@ -51,60 +51,69 @@ export function Keyboard({
       aria-label="Teclado virtual"
     >
       <div className="flex flex-col gap-1.5 sm:gap-2">
-        {KEYBOARD_ROWS.map((row, rowIdx) => (
-          <div
-            key={rowIdx}
-            className="flex w-full justify-center gap-1 sm:gap-1.5"
-          >
-            {row.map((key) => {
-              const isActionKey = key === 'ENTER' || key === 'BACKSPACE';
-              const status = !isActionKey ? keyboardStatuses[key] : undefined;
-              const colorClass = isActionKey
-                ? 'bg-[#4c4347] text-zinc-100 hover:bg-[#5c5256]'
-                : getKeyColorClass(status);
+        {KEYBOARD_ROWS.map((row, rowIdx) => {
+          const rowIndentClass =
+            rowIdx === 1 ? 'pl-2 sm:pl-3' : rowIdx === 2 ? 'pl-4 sm:pl-6' : '';
 
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => handleKeyClick(key)}
-                  aria-label={
-                    key === 'BACKSPACE'
-                      ? 'Apagar letra'
-                      : key === 'ENTER'
-                        ? 'Confirmar palpite'
-                        : `Letra ${key}`
-                  }
-                  className={`flex h-12 sm:h-14 items-center justify-center rounded-lg border font-bold uppercase transition active:scale-95 disabled:opacity-60 ${
-                    isActionKey
-                      ? 'px-2.5 sm:px-4 text-xs sm:text-sm flex-[1.5]'
-                      : 'flex-1 text-sm sm:text-base max-w-[44px]'
-                  } ${colorClass}`}
-                >
-                  {key === 'BACKSPACE' ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z" />
-                      <line x1="18" y1="9" x2="12" y2="15" />
-                      <line x1="12" y1="9" x2="18" y2="15" />
-                    </svg>
-                  ) : (
-                    key
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        ))}
+          return (
+            <div
+              key={rowIdx}
+              className={`flex w-full justify-end gap-1 sm:gap-1.5 ${rowIndentClass}`}
+            >
+              {row.map((key) => {
+                const isBackspace = key === 'BACKSPACE';
+                const isEnter = key === 'ENTER';
+                const isActionKey = isBackspace || isEnter;
+                const status = !isActionKey ? keyboardStatuses[key] : undefined;
+                const colorClass = isActionKey
+                  ? 'bg-[#4c4347] text-zinc-100 border-transparent hover:bg-[#5c5256]'
+                  : getKeyColorClass(status);
+
+                const sizeClass = isEnter
+                  ? 'flex-[2.1] px-2.5 sm:px-4 text-xs sm:text-sm tracking-wider ml-0.5 sm:ml-1'
+                  : isBackspace
+                    ? 'flex-[1.25] px-2 sm:px-3 text-xs sm:text-sm ml-0.5 sm:ml-1'
+                    : 'flex-1 text-sm sm:text-base min-w-0';
+
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => handleKeyClick(key)}
+                    aria-label={
+                      isBackspace
+                        ? 'Apagar letra'
+                        : isEnter
+                          ? 'Confirmar palpite'
+                          : `Letra ${key}`
+                    }
+                    className={`flex h-12 sm:h-14 items-center justify-center rounded-lg border font-bold uppercase transition active:scale-95 disabled:opacity-60 ${sizeClass} ${colorClass}`}
+                  >
+                    {isBackspace ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z" />
+                        <line x1="18" y1="9" x2="12" y2="15" />
+                        <line x1="12" y1="9" x2="18" y2="15" />
+                      </svg>
+                    ) : (
+                      key
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
