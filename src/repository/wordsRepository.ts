@@ -4,7 +4,7 @@ export async function findTodayWord() {
     const word = await db.query(
         `SELECT id, word FROM words WHERE date = CURRENT_DATE;`
     )
-    return word
+    return word.rows[0]
 }
 
 export async function findTodayGame(userId: string) {
@@ -26,12 +26,13 @@ export async function findTodayGame(userId: string) {
 
 export async function findAttemptsByGameId(attemptID: string) {
     const game = await db.query(
-        `SELECT
-        attempts.game_id,
-        LIMIT 1;`,
+        `SELECT id, game_id, guess, attempt_number, created_at
+         FROM attempts
+         WHERE game_id = $1
+         ORDER BY attempt_number ASC`,
         [attemptID]
     )
-    return game.rows[0] ?? null
+    return game.rows
 }
 
 export async function createAttempt(
@@ -54,4 +55,14 @@ export async function updateGameStatus(gameId: number, status: "won" | "lost") {
         `UPDATE games SET status = $1 WHERE id = $2`,
         [status, gameId]
     );
+}
+
+export async function createGame(userId: string, wordId: number) {
+    const { rows } = await db.query(
+        `INSERT INTO games (user_id, word_id)
+     VALUES ($1, $2)
+     RETURNING id, user_id, word_id, status`,
+        [userId, wordId]
+    );
+    return rows[0];
 }
