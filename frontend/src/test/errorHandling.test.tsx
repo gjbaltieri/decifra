@@ -127,4 +127,26 @@ describe('Tratamento de erros de sessão e API', () => {
     ).toBeInTheDocument();
     expect(localStorage.getItem(TOKEN_STORAGE_KEY)).not.toBeNull();
   });
+
+  it('exibe mensagem amigável quando o servidor está offline ou inacessível', async () => {
+    // Arrange
+    seedAuthenticatedSession();
+    mockFetchRoutes({
+      'GET /game/findtodaygame': () => {
+        throw new TypeError('Failed to fetch');
+      },
+    });
+
+    // Act
+    render(<App />);
+
+    // Assert
+    const messages = await screen.findAllByText(
+      /não foi possível conectar ao servidor no momento\. tente novamente em alguns instantes\./i
+    );
+    expect(messages.length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.queryByText(/verifique se a api está rodando/i)
+    ).not.toBeInTheDocument();
+  });
 });

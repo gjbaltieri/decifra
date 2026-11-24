@@ -290,4 +290,56 @@ describe('Autenticação (Login, Cadastro e Logout)', () => {
     expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(USER_STORAGE_KEY)).toBeNull();
   });
+
+  it('restaura a sessão ao recarregar mesmo quando user.id salvo é numérico (SERIAL do PostgreSQL) sem exibir tela inicial', async () => {
+    // Arrange — simula dados salvos como retornados pelo backend (id numérico)
+    localStorage.setItem(TOKEN_STORAGE_KEY, DEFAULT_TOKEN);
+    localStorage.setItem(
+      USER_STORAGE_KEY,
+      JSON.stringify({ id: 42, username: 'gustavo' })
+    );
+    mockFetchRoutes({
+      'GET /game/findtodaygame': () =>
+        jsonResponse({ status: 'playing', attempts: [] }),
+    });
+
+    // Act — simula inicialização após F5
+    render(<App />);
+
+    // Assert — não há flash da tela inicial (botão Jogar não aparece)
+    expect(
+      screen.queryByRole('button', { name: /^jogar$/i })
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('grid', { name: /tabuleiro do decifra/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText('@gustavo')).toBeInTheDocument();
+  });
+
+  it('restaura a sessão a partir do payload do JWT quando apenas o token existe no localStorage', async () => {
+    // Arrange — JWT com payload { userId: 7, username: 'maria', exp: futuro }
+    const futureExp = Math.floor(Date.now() / 1000) + 3600;
+    const payload = btoa(
+      JSON.stringify({ userId: 7, username: 'maria', exp: futureExp })
+    );
+    const jwt = `header.${payload}.signature`;
+    localStorage.setItem(TOKEN_STORAGE_KEY, jwt);
+
+    mockFetchRoutes({
+      'GET /game/findtodaygame': () =>
+        jsonResponse({ status: 'playing', attempts: [] }),
+    });
+
+    // Act
+    render(<App />);
+
+    // Assert
+    expect(
+      screen.queryByRole('button', { name: /^jogar$/i })
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('grid', { name: /tabuleiro do decifra/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText('@maria')).toBeInTheDocument();
+  });
 });

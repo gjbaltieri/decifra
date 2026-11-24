@@ -3,8 +3,7 @@ import {
   api,
   ApiError,
   clearAuthSession,
-  getStoredToken,
-  getStoredUser,
+  restoreStoredSession,
   saveAuthSession,
 } from '../services/api';
 import type { AuthCredentials, AuthUser } from '../types/api';
@@ -15,17 +14,19 @@ interface UseAuthOptions {
 }
 
 export function useAuth({ showToast }: UseAuthOptions) {
-  const [token, setToken] = useState<string | null>(() => getStoredToken());
-  const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
+  const [session, setSession] = useState<{
+    token: string | null;
+    user: AuthUser | null;
+  }>(() => restoreStoredSession());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { token, user } = session;
   const isAuthenticated = Boolean(token && user);
 
   const logout = useCallback(
     (reason?: string) => {
       clearAuthSession();
-      setToken(null);
-      setUser(null);
+      setSession({ token: null, user: null });
       if (reason) {
         showToast(reason, 'info');
       }
@@ -41,10 +42,13 @@ export function useAuth({ showToast }: UseAuthOptions) {
           username: credentials.username.trim(),
           password: credentials.password,
         });
-        saveAuthSession(response.token, response.user);
-        setToken(response.token);
-        setUser(response.user);
-        showToast(`Bem-vindo, ${response.user.username}!`, 'success');
+        const normalizedUser: AuthUser = {
+          id: String(response.user.id),
+          username: response.user.username,
+        };
+        saveAuthSession(response.token, normalizedUser);
+        setSession({ token: response.token, user: normalizedUser });
+        showToast(`Bem-vindo, ${normalizedUser.username}!`, 'success');
         return true;
       } catch (err) {
         const message =
@@ -71,9 +75,12 @@ export function useAuth({ showToast }: UseAuthOptions) {
           username: credentials.username.trim(),
           password: credentials.password,
         });
-        saveAuthSession(loginResponse.token, loginResponse.user);
-        setToken(loginResponse.token);
-        setUser(loginResponse.user);
+        const normalizedUser: AuthUser = {
+          id: String(loginResponse.user.id),
+          username: loginResponse.user.username,
+        };
+        saveAuthSession(loginResponse.token, normalizedUser);
+        setSession({ token: loginResponse.token, user: normalizedUser });
         showToast('Conta criada com sucesso! Bom jogo!', 'success');
         return true;
       } catch (err) {
