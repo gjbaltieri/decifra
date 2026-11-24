@@ -25,7 +25,7 @@ describe('Tratamento de erros de sessão e API', () => {
     // Assert
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: /entrar e jogar/i })
+        screen.getByRole('button', { name: /^jogar$/i })
       ).toBeInTheDocument();
     });
     expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();
@@ -55,7 +55,7 @@ describe('Tratamento de erros de sessão e API', () => {
     // Assert
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: /entrar e jogar/i })
+        screen.getByRole('button', { name: /^jogar$/i })
       ).toBeInTheDocument();
     });
     expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();

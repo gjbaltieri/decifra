@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../App';
@@ -13,6 +13,52 @@ import {
 } from './helpers';
 
 describe('Autenticação (Login, Cadastro e Logout)', () => {
+  it('exibe tela inicial limpa com exemplo de 5 letras, CTA Jogar, botão Entrar no header e abre/fecha modal de login', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    // Tela inicial limpa sem formulário fixo e sem 7 bloquinhos
+    expect(
+      screen.getByRole('heading', { name: 'DECIFRA' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /descubra a palavra do dia/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/posição certa/i)).toBeInTheDocument();
+    expect(screen.getByText(/outra posição/i)).toBeInTheDocument();
+    expect(screen.getByText(/não existe/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^jogar$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /^entrar$/i })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    // Abre modal pelo botão Entrar do header
+    await user.click(screen.getByRole('button', { name: /^entrar$/i }));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+
+    // Alterna visibilidade da senha
+    const passwordInput = within(dialog).getByLabelText(/senha/i);
+    expect(passwordInput).toHaveAttribute('type', 'password');
+
+    await user.click(
+      within(dialog).getByRole('button', { name: /mostrar caracteres/i })
+    );
+    expect(passwordInput).toHaveAttribute('type', 'text');
+
+    await user.click(
+      within(dialog).getByRole('button', { name: /ocultar caracteres/i })
+    );
+    expect(passwordInput).toHaveAttribute('type', 'password');
+
+    // Fecha o modal pelo botão X
+    await user.click(
+      within(dialog).getByRole('button', { name: /fechar modal de acesso/i })
+    );
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   it('envia apenas username e password no login, salva o JWT no localStorage e carrega o jogo do dia', async () => {
     // Arrange
     const user = userEvent.setup();
@@ -39,10 +85,15 @@ describe('Autenticação (Login, Cadastro e Logout)', () => {
 
     render(<App />);
 
-    // Act
-    await user.type(screen.getByLabelText(/usuário/i), 'jogador');
-    await user.type(screen.getByLabelText(/senha/i), 'senha123');
-    await user.click(screen.getByRole('button', { name: /entrar e jogar/i }));
+    // Act — abre modal pelo CTA principal "Jogar"
+    await user.click(screen.getByRole('button', { name: /^jogar$/i }));
+    const dialog = screen.getByRole('dialog');
+
+    await user.type(within(dialog).getByLabelText(/usuário/i), 'jogador');
+    await user.type(within(dialog).getByLabelText(/senha/i), 'senha123');
+    await user.click(
+      within(dialog).getByRole('button', { name: /entrar e jogar/i })
+    );
 
     // Assert
     expect(
@@ -108,12 +159,16 @@ describe('Autenticação (Login, Cadastro e Logout)', () => {
 
     render(<App />);
 
-    // Act
-    await user.click(screen.getByRole('button', { name: /criar conta/i }));
-    await user.type(screen.getByLabelText(/usuário/i), 'novojogador');
-    await user.type(screen.getByLabelText(/senha/i), 'segredo123');
+    // Act — abre modal direto na aba de cadastro pelo link "Criar conta grátis"
     await user.click(
-      screen.getByRole('button', { name: /cadastrar e jogar/i })
+      screen.getByRole('button', { name: /criar conta grátis/i })
+    );
+    const dialog = screen.getByRole('dialog');
+
+    await user.type(within(dialog).getByLabelText(/usuário/i), 'novojogador');
+    await user.type(within(dialog).getByLabelText(/senha/i), 'segredo123');
+    await user.click(
+      within(dialog).getByRole('button', { name: /cadastrar e jogar/i })
     );
 
     // Assert
@@ -159,9 +214,14 @@ describe('Autenticação (Login, Cadastro e Logout)', () => {
     render(<App />);
 
     // Act
-    await user.type(screen.getByLabelText(/usuário/i), 'jogador');
-    await user.type(screen.getByLabelText(/senha/i), 'errada');
-    await user.click(screen.getByRole('button', { name: /entrar e jogar/i }));
+    await user.click(screen.getByRole('button', { name: /^entrar$/i }));
+    const dialog = screen.getByRole('dialog');
+
+    await user.type(within(dialog).getByLabelText(/usuário/i), 'jogador');
+    await user.type(within(dialog).getByLabelText(/senha/i), 'errada');
+    await user.click(
+      within(dialog).getByRole('button', { name: /entrar e jogar/i })
+    );
 
     // Assert
     expect(
@@ -184,11 +244,16 @@ describe('Autenticação (Login, Cadastro e Logout)', () => {
     render(<App />);
 
     // Act
-    await user.click(screen.getByRole('button', { name: /criar conta/i }));
-    await user.type(screen.getByLabelText(/usuário/i), 'jogador');
-    await user.type(screen.getByLabelText(/senha/i), '123456');
+    await user.click(screen.getByRole('button', { name: /^jogar$/i }));
+    const dialog = screen.getByRole('dialog');
+
     await user.click(
-      screen.getByRole('button', { name: /cadastrar e jogar/i })
+      within(dialog).getByRole('button', { name: /criar conta/i })
+    );
+    await user.type(within(dialog).getByLabelText(/usuário/i), 'jogador');
+    await user.type(within(dialog).getByLabelText(/senha/i), '123456');
+    await user.click(
+      within(dialog).getByRole('button', { name: /cadastrar e jogar/i })
     );
 
     // Assert
@@ -198,7 +263,7 @@ describe('Autenticação (Login, Cadastro e Logout)', () => {
     expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();
   });
 
-  it('remove o token do localStorage e volta para a tela de login ao clicar em Sair', async () => {
+  it('remove o token do localStorage e volta para a tela inicial ao clicar em Sair', async () => {
     // Arrange
     const user = userEvent.setup();
     seedAuthenticatedSession();
@@ -216,9 +281,12 @@ describe('Autenticação (Login, Cadastro e Logout)', () => {
     // Assert
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: /entrar e jogar/i })
+        screen.getByRole('button', { name: /^jogar$/i })
       ).toBeInTheDocument();
     });
+    expect(
+      screen.getByRole('button', { name: /^entrar$/i })
+    ).toBeInTheDocument();
     expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(USER_STORAGE_KEY)).toBeNull();
   });

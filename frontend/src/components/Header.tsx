@@ -5,6 +5,7 @@ interface HeaderProps {
   gameStatus: GameStatus;
   onOpenHowToPlay: () => void;
   onOpenGameOver: () => void;
+  onOpenAuth?: () => void;
   onLogout: () => void;
 }
 
@@ -13,6 +14,7 @@ export function Header({
   gameStatus,
   onOpenHowToPlay,
   onOpenGameOver,
+  onOpenAuth,
   onLogout,
 }: HeaderProps) {
   return (
@@ -25,7 +27,7 @@ export function Header({
             onClick={onOpenHowToPlay}
             title="Como jogar"
             aria-label="Como jogar"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700/80 bg-[#18181b] text-zinc-300 transition hover:border-zinc-500 hover:text-white active:scale-95"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700/80 bg-[#18181b] text-zinc-300 transition hover:border-zinc-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3aa394] active:scale-95"
           >
             <span className="text-base font-bold">?</span>
           </button>
@@ -62,9 +64,9 @@ export function Header({
           DECIFRA
         </h1>
 
-        {/* Usuário e Logout à direita */}
+        {/* Usuário e Logout ou botão Entrar à direita */}
         <div className="flex items-center justify-end gap-2 min-w-[96px]">
-          {user && (
+          {user ? (
             <>
               <span
                 className="hidden sm:inline-block max-w-[100px] truncate text-xs font-medium text-zinc-400"
@@ -76,7 +78,7 @@ export function Header({
                 type="button"
                 onClick={onLogout}
                 title="Sair da conta"
-                className="flex h-9 items-center gap-1.5 rounded-lg border border-zinc-700/80 bg-[#18181b] px-2.5 text-xs font-semibold text-zinc-300 transition hover:border-red-500/50 hover:bg-red-950/30 hover:text-red-200 active:scale-95"
+                className="flex h-9 items-center gap-1.5 rounded-lg border border-zinc-700/80 bg-[#18181b] px-2.5 text-xs font-semibold text-zinc-300 transition hover:border-red-500/50 hover:bg-red-950/30 hover:text-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3aa394] active:scale-95"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -95,6 +97,16 @@ export function Header({
                 <span>Sair</span>
               </button>
             </>
+          ) : (
+            onOpenAuth && (
+              <button
+                type="button"
+                onClick={onOpenAuth}
+                className="flex h-9 items-center justify-center rounded-lg border border-[#3aa394]/60 bg-[#3aa394]/15 px-3.5 text-xs font-bold uppercase tracking-wider text-[#5fd3c2] transition hover:bg-[#3aa394]/25 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3aa394] active:scale-95"
+              >
+                Entrar
+              </button>
+            )
           )}
         </div>
       </div>

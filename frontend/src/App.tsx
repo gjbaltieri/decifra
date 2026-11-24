@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AuthModal } from './components/AuthModal';
+import { AuthModal, type AuthModalMode } from './components/AuthModal';
 import { Board } from './components/Board';
 import { Footer } from './components/Footer';
 import { GameOverModal } from './components/GameOverModal';
 import { Header } from './components/Header';
 import { HowToPlayModal } from './components/HowToPlayModal';
 import { Keyboard } from './components/Keyboard';
+import { LandingView } from './components/LandingView';
 import { ToastContainer } from './components/ToastContainer';
 import { useAuth } from './hooks/useAuth';
 import { useTermoGame } from './hooks/useTermoGame';
@@ -15,6 +16,13 @@ import { shareResultImage } from './utils/shareResultImage';
 export function App() {
   const { toasts, showToast, dismissToast } = useToast();
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<AuthModalMode>('login');
+
+  const openAuthModal = useCallback((mode: AuthModalMode = 'login') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  }, []);
 
   const {
     user,
@@ -143,15 +151,25 @@ export function App() {
         gameStatus={status}
         onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
         onOpenGameOver={() => setIsGameOverModalOpen(true)}
+        onOpenAuth={() => openAuthModal('login')}
         onLogout={() => logout('Você saiu da sua conta.')}
       />
 
       {!isAuthenticated ? (
-        <AuthModal
-          isSubmitting={isAuthSubmitting}
-          onLogin={login}
-          onRegister={register}
-        />
+        <>
+          <LandingView
+            onPlay={() => openAuthModal('login')}
+            onRegister={() => openAuthModal('register')}
+          />
+          <AuthModal
+            isOpen={isAuthModalOpen}
+            initialMode={authModalMode}
+            isSubmitting={isAuthSubmitting}
+            onClose={() => setIsAuthModalOpen(false)}
+            onLogin={login}
+            onRegister={register}
+          />
+        </>
       ) : (
         <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-between px-2 py-2 sm:py-4">
           {/* 1. Estado: LOADING */}
