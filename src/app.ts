@@ -6,7 +6,7 @@ import { createUser, findUser } from './repository/userRepository';
 import bcrypt from 'bcrypt'
 import { JWT } from './services/jtw';
 import { authMiddleware, AuthRequest } from "./middlewares/authMiddleware";
-import { createAttempt, createGame, findAttemptsByGameId, findTodayGame, findTodayWord, updateGameStatus } from './repository/wordsRepository';
+import { createAttempt, createGame, findAttemptsByGameId, findTodayGame, findTodayWord, findUserGames, findUserHistory, updateGameStatus } from './repository/wordsRepository';
 import { checkGuess } from './services/checkGuess';
 import { normalizeGuess, resolveStatus } from './services/gameServices';
 import fs from "node:fs";
@@ -114,6 +114,21 @@ app.get('/game/findtodaygame', authMiddleware, async (req: AuthRequest, res: Res
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: 'Erro ao buscar jogo do dia' });
+    }
+})
+
+app.get('/game/history', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const userId = req.user!.userId;
+        const rawLimit = Number(req.query.limit);
+        const rawOffset = Number(req.query.offset);
+        const limit = Number.isInteger(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 50) : 10;
+        const offset = Number.isInteger(rawOffset) && rawOffset >= 0 ? rawOffset : 0;
+        const history = await findUserHistory(userId, limit, offset)
+        return res.status(200).json(history)
+    } catch (error) {
+        console.error("Erro em POST /game/history:", error);
+        return res.status(500).json({ error: "Erro interno ao processar historico" });
     }
 })
 

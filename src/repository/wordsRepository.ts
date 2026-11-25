@@ -67,3 +67,40 @@ export async function createGame(userId: string, wordId: number) {
     );
     return rows[0];
 }
+
+export async function findUserHistory(userId: string, limit = 10, offset = 0) {
+    const { rows } = await db.query(`SELECT
+    games.id,
+    users.username,
+    games.status,
+    CASE
+        WHEN games.status <> 'playing' THEN words.word
+        ELSE NULL
+    END AS word,
+    TO_CHAR(words.date, 'YYYY-MM-DD') AS date,
+    COUNT(attempt.id)::int AS total_attempts,
+    games.created_at
+FROM games
+JOIN users
+    ON users.id = games.user_id
+JOIN words
+    ON words.id = games.word_id
+LEFT JOIN attempts AS attempt
+    ON attempt.game_id = games.id
+WHERE games.user_id = $1
+GROUP BY
+    games.id,
+    users.username,
+    games.status,
+    words.word,
+    words.date,
+    games.created_at
+ ORDER BY words.date DESC, games.created_at DESC
+     LIMIT $2 OFFSET $3`, [userId, limit + 1, offset]);
+
+    const hasMore = rows.length > limit;
+    return {
+        games: hasMore ? rows.slice(0, limit) : rows,
+        hasMore,
+    };
+}
