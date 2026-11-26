@@ -2,6 +2,23 @@ export type LetterStatus = 'correct' | 'present' | 'absent';
 
 export type GameStatus = 'playing' | 'won' | 'lost';
 
+export interface HistoryGame {
+  id: number;
+  username: string;
+  status: GameStatus;
+  word: string | null;
+  date: string;
+  total_attempts: number;
+  created_at: string;
+}
+
+export interface GameHistoryResponse {
+  games: HistoryGame[];
+  hasMore: boolean;
+  currentStreak?: number;
+  bestStreak?: number;
+}
+
 export interface AuthUser {
   id: string;
   username: string;
@@ -45,6 +62,8 @@ export interface TodayGameResponse {
   status: GameStatus;
   attempts: AttemptItem[];
   word?: string;
+  currentStreak?: number;
+  bestStreak?: number;
 }
 
 /**
@@ -64,6 +83,8 @@ export interface GuessResponse {
   feedback: LetterStatus[];
   status: GameStatus;
   word?: string;
+  currentStreak?: number;
+  bestStreak?: number;
 }
 
 /**

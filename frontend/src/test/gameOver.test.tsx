@@ -105,6 +105,15 @@ describe('Fim de partida (Vitória, Derrota e Compartilhamento de Imagem PNG)', 
     for (const letter of ['T', 'E', 'R', 'M', 'O']) {
       expect(within(dialog).getByText(letter)).toBeInTheDocument();
     }
+    const whatsapp = within(dialog).getByRole('link', { name: /WhatsApp/i });
+    const link = new URL(whatsapp.getAttribute('href')!);
+    expect(link.origin).toBe('https://wa.me');
+    expect(whatsapp).toHaveAttribute('target', '_blank');
+    expect(whatsapp).toHaveAttribute('rel', 'noopener noreferrer');
+    const message = link.searchParams.get('text');
+    expect(message).toMatch(/^🧩 DECIFRA • \d{2}\/\d{2}\/\d{4}\n/);
+    expect(message).toContain(`Acertei em 1/6 tentativas!\n\n🟩🟩🟩🟩🟩\n\n${window.location.origin}`);
+    expect(message).not.toContain('TERMO');
 
     // Act — clica em Compartilhar resultado para gerar e copiar imagem PNG
     await user.click(
@@ -209,9 +218,15 @@ describe('Fim de partida (Vitória, Derrota e Compartilhamento de Imagem PNG)', 
     expect(shareMock).toHaveBeenCalledTimes(1);
     const sharedArg = shareMock.mock.calls[0][0] as {
       title: string;
+      text: string;
       files: File[];
     };
     expect(sharedArg.title).toBe('DECIFRA');
+    const link = within(dialog).getByRole('link', { name: /WhatsApp/i });
+    expect(sharedArg.text).toBe(new URL(link.getAttribute('href')!).searchParams.get('text'));
+    expect(sharedArg.text).toContain('Não foi dessa vez (6/6)');
+    expect(sharedArg.text).toContain('⬛🟨⬛⬛🟩');
+    expect(sharedArg.text).not.toMatch(/FLUJO|MUNDO|CASAS/);
     expect(sharedArg.files[0].name).toBe('decifra-resultado.png');
     expect(sharedArg.files[0].type).toBe('image/png');
     expect(

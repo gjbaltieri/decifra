@@ -3,6 +3,10 @@ import { AuthModal, type AuthModalMode } from './components/AuthModal';
 import { Board } from './components/Board';
 import { Footer } from './components/Footer';
 import { GameOverModal } from './components/GameOverModal';
+import { GameHistory } from './components/GameHistory';
+import { GameInfoModal } from './components/GameInfoModal';
+import { ReleaseNotes } from './components/ReleaseNotes';
+import { APP_VERSION, LAST_SEEN_VERSION_KEY } from './constants/changelog';
 import { Header } from './components/Header';
 import { HowToPlayModal } from './components/HowToPlayModal';
 import { Keyboard } from './components/Keyboard';
@@ -18,6 +22,24 @@ export function App() {
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<AuthModalMode>('login');
+  const [gamePanel, setGamePanel] = useState<'history' | 'notes' | null>(null);
+  const [hasNewVersion, setHasNewVersion] = useState(() => {
+    try {
+      return localStorage.getItem(LAST_SEEN_VERSION_KEY) !== APP_VERSION;
+    } catch {
+      return true;
+    }
+  });
+
+  function openReleaseNotes() {
+    setGamePanel('notes');
+    setHasNewVersion(false);
+    try {
+      localStorage.setItem(LAST_SEEN_VERSION_KEY, APP_VERSION);
+    } catch {
+      // Com o armazenamento indisponível, a leitura vale para esta sessão.
+    }
+  }
 
   const openAuthModal = useCallback((mode: AuthModalMode = 'login') => {
     setAuthModalMode(mode);
@@ -33,10 +55,18 @@ export function App() {
     logout,
   } = useAuth({ showToast });
 
+  const endSession = useCallback((message?: string) => {
+    setGamePanel(null);
+    logout(message);
+  }, [logout]);
+
   const {
     attempts,
     status,
+    gameDate,
     secretWord,
+    currentStreak,
+    bestStreak,
     isLoadingGame,
     loadError,
     currentLetters,
@@ -57,20 +87,20 @@ export function App() {
   } = useTermoGame({
     user,
     isAuthenticated,
-    onUnauthorized: logout,
+    onUnauthorized: endSession,
     showToast,
   });
 
   // Listener global de teclado físico
   useEffect(() => {
-    if (!isAuthenticated || isHowToPlayOpen || isGameOverModalOpen) {
+    if (!isAuthenticated || isHowToPlayOpen || isGameOverModalOpen || gamePanel) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.metaKey || event.altKey) return;
 
-      const target = event.target as HTMLElement | null;
+      const target = event.target instanceof HTMLElement ? event.target : null;
       if (
         target &&
         (target.tagName === 'INPUT' ||
@@ -83,6 +113,7 @@ export function App() {
       const { key } = event;
 
       if (key === 'Enter') {
+        if (target?.closest('header button')) return;
         event.preventDefault();
         submitGuess();
         return;
@@ -107,6 +138,7 @@ export function App() {
       }
 
       if (/^[a-zA-Z]$/.test(key)) {
+        if (target?.closest('header button')) target.blur();
         event.preventDefault();
         handleLetterInput(key.toUpperCase());
       }
@@ -118,15 +150,16 @@ export function App() {
     isAuthenticated,
     isHowToPlayOpen,
     isGameOverModalOpen,
+    gamePanel,
     submitGuess,
     handleBackspace,
     handleMoveCursor,
     handleLetterInput,
   ]);
 
-  const handleCopyShare = useCallback(async () => {
+  const handleCopyShare = useCallback(async (text: string) => {
     try {
-      const outcome = await shareResultImage({ attempts, status });
+      const outcome = await shareResultImage({ attempts, status, date: gameDate }, text);
       if (outcome === 'shared') {
         showToast('Resultado do DECIFRA compartilhado!', 'success');
       } else if (outcome === 'copied') {
@@ -140,7 +173,7 @@ export function App() {
     } catch {
       showToast('Não foi possível gerar a imagem de resultado.', 'error');
     }
-  }, [attempts, status, showToast]);
+  }, [attempts, status, gameDate, showToast]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-[#121213] text-zinc-100">
@@ -149,10 +182,14 @@ export function App() {
       <Header
         user={user}
         gameStatus={status}
+        currentStreak={currentStreak}
         onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
         onOpenGameOver={() => setIsGameOverModalOpen(true)}
+        onOpenHistory={() => setGamePanel('history')}
+        onOpenReleaseNotes={openReleaseNotes}
+        hasNewVersion={hasNewVersion}
         onOpenAuth={() => openAuthModal('login')}
-        onLogout={() => logout('Você saiu da sua conta.')}
+        onLogout={() => endSession('Você saiu da sua conta.')}
       />
 
       {!isAuthenticated ? (
@@ -236,9 +273,24 @@ export function App() {
         onClose={() => setIsHowToPlayOpen(false)}
       />
 
+      {isAuthenticated && gamePanel && (
+        <GameInfoModal title={gamePanel === 'history' ? 'Histórico de partidas' : 'Notas de atualização'} onClose={() => setGamePanel(null)}>
+          {gamePanel === 'history' ? (
+            <GameHistory
+              currentStreak={currentStreak}
+              bestStreak={bestStreak}
+              onUnauthorized={endSession}
+            />
+          ) : (
+            <ReleaseNotes />
+          )}
+        </GameInfoModal>
+      )}
+
       <GameOverModal
-        isOpen={isGameOverModalOpen}
+        isOpen={isGameOverModalOpen && !gamePanel}
         status={status}
+        gameDate={gameDate}
         attempts={attempts}
         secretWord={secretWord}
         onClose={() => setIsGameOverModalOpen(false)}

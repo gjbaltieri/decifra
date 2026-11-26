@@ -93,11 +93,16 @@ exports.app.get('/game/findtodaygame', authMiddleware_1.authMiddleware, async (r
         const user_Id = req.user?.userId;
         if (!user_Id)
             return res.status(401).json({ error: 'Não autenticado' });
-        const game = await (0, wordsRepository_1.findTodayGame)(user_Id);
+        const [game, streak] = await Promise.all([
+            (0, wordsRepository_1.findTodayGame)(user_Id),
+            (0, wordsRepository_1.findUserStreak)(user_Id),
+        ]);
         if (!game) {
             return res.status(200).json({
                 status: "playing",
                 attempts: [],
+                currentStreak: streak.currentStreak,
+                bestStreak: streak.bestStreak,
             });
         }
         const attempts = await (0, wordsRepository_1.findAttemptsByGameId)(game.id);
@@ -109,12 +114,38 @@ exports.app.get('/game/findtodaygame', authMiddleware_1.authMiddleware, async (r
         return res.status(200).json({
             status: game.status,
             attempts: formattedAttempts,
+            currentStreak: streak.currentStreak,
+            bestStreak: streak.bestStreak,
             ...(game.status !== "playing" && game.word && { word: game.word }),
         });
     }
     catch (error) {
         console.error(error);
         return res.status(500).json({ error: 'Erro ao buscar jogo do dia' });
+    }
+});
+exports.app.get('/game/history', authMiddleware_1.authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId)
+            return res.status(401).json({ error: 'Não autenticado' });
+        const rawLimit = Number(req.query.limit);
+        const rawOffset = Number(req.query.offset);
+        const limit = Number.isInteger(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 50) : 10;
+        const offset = Number.isInteger(rawOffset) && rawOffset >= 0 ? rawOffset : 0;
+        const [history, streak] = await Promise.all([
+            (0, wordsRepository_1.findUserHistory)(userId, limit, offset),
+            (0, wordsRepository_1.findUserStreak)(userId),
+        ]);
+        return res.status(200).json({
+            ...history,
+            currentStreak: streak.currentStreak,
+            bestStreak: streak.bestStreak,
+        });
+    }
+    catch (error) {
+        console.error("Erro em GET /game/history:", error);
+        return res.status(500).json({ error: "Erro interno ao processar histórico" });
     }
 });
 exports.app.post("/game/guess", authMiddleware_1.authMiddleware, async (req, res) => {
@@ -151,8 +182,10 @@ exports.app.post("/game/guess", authMiddleware_1.authMiddleware, async (req, res
         }
         await (0, wordsRepository_1.createAttempt)(game.id, validGuess, attemptNumber);
         const status = (0, gameServices_1.resolveStatus)(validGuess, todayWord.word, attemptNumber);
+        let streak = null;
         if (status !== "playing") {
             await (0, wordsRepository_1.updateGameStatus)(game.id, status);
+            streak = await (0, wordsRepository_1.findUserStreak)(userId);
         }
         // Calcula o feedback e verifica vitória/derrota
         const feedback = (0, checkGuess_1.checkGuess)(todayWord.word, validGuess);
@@ -163,6 +196,10 @@ exports.app.post("/game/guess", authMiddleware_1.authMiddleware, async (req, res
             feedback,
             status,
             ...(status !== "playing" && { word: todayWord.word }),
+            ...(streak && {
+                currentStreak: streak.currentStreak,
+                bestStreak: streak.bestStreak,
+            }),
         });
     }
     catch (error) {

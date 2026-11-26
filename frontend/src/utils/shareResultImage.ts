@@ -1,4 +1,5 @@
 import type { AttemptItem, GameStatus, LetterStatus } from '../types/api';
+import { formatShareDate } from './formatShareResult';
 
 export type ShareImageOutcome = 'shared' | 'copied' | 'downloaded';
 
@@ -33,13 +34,6 @@ function drawRoundedRect(
   ctx.lineTo(x, y + radius);
   ctx.quadraticCurveTo(x, y, x + radius, y);
   ctx.closePath();
-}
-
-export function formatShareDate(date = new Date()): string {
-  const dd = String(date.getDate()).padStart(2, '0');
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const yyyy = date.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
 }
 
 export async function generateResultImageBlob({
@@ -171,7 +165,8 @@ function triggerBlobDownload(blob: Blob, filename: string): void {
 }
 
 export async function shareResultImage(
-  params: ShareResultImageParams
+  params: ShareResultImageParams,
+  text: string
 ): Promise<ShareImageOutcome> {
   const blob = await generateResultImageBlob(params);
   const filename = 'decifra-resultado.png';
@@ -188,6 +183,7 @@ export async function shareResultImage(
         await navigator.share({
           files: [file],
           title: 'DECIFRA',
+          text,
         });
         return 'shared';
       }
@@ -208,7 +204,10 @@ export async function shareResultImage(
     typeof ClipboardItem !== 'undefined'
   ) {
     try {
-      const item = new ClipboardItem({ 'image/png': blob });
+      const item = new ClipboardItem({
+        'image/png': blob,
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      });
       await navigator.clipboard.write([item]);
       return 'copied';
     } catch {

@@ -1,12 +1,14 @@
 import type { AttemptItem, GameStatus } from '../types/api';
+import { formatShareResult } from '../utils/formatShareResult';
 
 interface GameOverModalProps {
   isOpen: boolean;
   status: GameStatus;
   attempts: AttemptItem[];
   secretWord: string | null;
+  gameDate: Date;
   onClose: () => void;
-  onCopyShare: () => void;
+  onCopyShare: (text: string) => void;
 }
 
 export function GameOverModal({
@@ -14,12 +16,14 @@ export function GameOverModal({
   status,
   attempts,
   secretWord,
+  gameDate,
   onClose,
   onCopyShare,
 }: GameOverModalProps) {
   if (!isOpen || status === 'playing') return null;
 
   const isWin = status === 'won';
+  const shareText = formatShareResult(status, attempts, gameDate, window.location.origin);
 
   return (
     <div
@@ -30,7 +34,7 @@ export function GameOverModal({
       aria-labelledby="gameover-title"
     >
       <div
-        className="animate-modal-in w-full max-w-md rounded-2xl border border-zinc-800 bg-[#18181b] p-6 text-center text-zinc-100 shadow-2xl"
+        className="animate-modal-in max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-800 bg-[#18181b] p-6 text-center text-zinc-100 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-end">
@@ -113,11 +117,19 @@ export function GameOverModal({
         </div>
 
         {/* Ações */}
-        <div className="flex flex-col sm:flex-row gap-2.5">
+        <a
+          href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-2.5 block w-full rounded-xl bg-[#3aa394] px-4 py-3 text-sm font-bold text-white hover:bg-[#329082] focus-visible:ring-2 focus-visible:ring-[#5fd3c2]"
+        >
+          Compartilhar no WhatsApp
+        </a>
+        <div className="flex flex-col gap-2.5 sm:flex-row">
           <button
             type="button"
-            onClick={onCopyShare}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#3aa394] px-4 py-3 text-sm font-bold uppercase tracking-wider text-white shadow-lg shadow-[#3aa394]/25 transition hover:bg-[#329082] active:scale-[0.99]"
+            onClick={() => onCopyShare(shareText)}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-700 px-3 py-2.5 text-sm font-semibold text-zinc-300 hover:border-zinc-500 hover:text-white"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -135,7 +147,7 @@ export function GameOverModal({
               <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
               <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
             </svg>
-            <span>Compartilhar resultado</span>
+            <span>Compartilhar resultado em imagem</span>
           </button>
 
           <button

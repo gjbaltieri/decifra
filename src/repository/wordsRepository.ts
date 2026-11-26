@@ -1,4 +1,5 @@
 import { db } from '../database/connection'
+import { calculateWinStreak, StreakGameStatus, StreakSummary } from '../services/streak'
 
 export async function findTodayWord() {
     const word = await db.query(
@@ -103,4 +104,32 @@ GROUP BY
         games: hasMore ? rows.slice(0, limit) : rows,
         hasMore,
     };
+}
+
+export async function findUserStreak(userId: string): Promise<StreakSummary> {
+    const { rows } = await db.query<{
+        date: string;
+        status: StreakGameStatus;
+        today_date: string;
+    }>(
+        `SELECT
+            TO_CHAR(words.date, 'YYYY-MM-DD') AS date,
+            games.status,
+            TO_CHAR((NOW() AT TIME ZONE 'America/Sao_Paulo')::date, 'YYYY-MM-DD') AS today_date
+        FROM games
+        JOIN words ON words.id = games.word_id
+        WHERE games.user_id = $1
+        ORDER BY words.date DESC`,
+        [userId]
+    );
+
+    if (rows.length === 0) {
+        return { currentStreak: 0, bestStreak: 0 };
+    }
+
+    const todayDate = rows[0].today_date;
+    return calculateWinStreak(
+        rows.map((row) => ({ date: row.date, status: row.status })),
+        todayDate
+    );
 }

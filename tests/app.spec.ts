@@ -17,6 +17,8 @@ jest.mock("../src/repository/wordsRepository", () => ({
     createAttempt: jest.fn(),
     createGame: jest.fn(),
     updateGameStatus: jest.fn(),
+    findUserHistory: jest.fn(),
+    findUserStreak: jest.fn(),
 }));
 
 import request from "supertest";
@@ -31,6 +33,8 @@ import {
     findAttemptsByGameId,
     findTodayGame,
     findTodayWord,
+    findUserHistory,
+    findUserStreak,
     updateGameStatus,
 } from "../src/repository/wordsRepository";
 
@@ -43,6 +47,8 @@ const mockedFindAttemptsByGameId = findAttemptsByGameId as jest.Mock;
 const mockedCreateAttempt = createAttempt as jest.Mock;
 const mockedCreateGame = createGame as jest.Mock;
 const mockedUpdateGameStatus = updateGameStatus as jest.Mock;
+const mockedFindUserHistory = findUserHistory as jest.Mock;
+const mockedFindUserStreak = findUserStreak as jest.Mock;
 
 const TEST_JWT_SECRET = "segredo-de-teste-jwt";
 
@@ -62,6 +68,8 @@ describe("API Termo (src/app.ts)", () => {
         jest.clearAllMocks();
         process.env.JWT_SECRET = TEST_JWT_SECRET;
         consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+        mockedFindUserStreak.mockResolvedValue({ currentStreak: 0, bestStreak: 0 });
+        mockedFindUserHistory.mockResolvedValue({ games: [], hasMore: false });
     });
 
     afterEach(() => {
@@ -471,6 +479,8 @@ describe("API Termo (src/app.ts)", () => {
             expect(response.body).toEqual({
                 status: "playing",
                 attempts: [],
+                currentStreak: 0,
+                bestStreak: 0,
             });
         });
 
@@ -503,6 +513,8 @@ describe("API Termo (src/app.ts)", () => {
                         feedback: ["correct", "correct", "present", "absent", "correct"],
                     },
                 ],
+                currentStreak: 0,
+                bestStreak: 0,
             });
         });
 

@@ -6,7 +6,7 @@ import { createUser, findUser } from './repository/userRepository';
 import bcrypt from 'bcrypt'
 import { JWT } from './services/jtw';
 import { authMiddleware, AuthRequest } from "./middlewares/authMiddleware";
-import { createAttempt, createGame, findAttemptsByGameId, findTodayGame, findTodayWord, findUserGames, findUserHistory, updateGameStatus } from './repository/wordsRepository';
+import { createAttempt, createGame, findAttemptsByGameId, findTodayGame, findTodayWord, findUserHistory, findUserStreak, updateGameStatus } from './repository/wordsRepository';
 import { checkGuess } from './services/checkGuess';
 import { normalizeGuess, resolveStatus } from './services/gameServices';
 import fs from "node:fs";
@@ -93,11 +93,16 @@ app.get('/game/findtodaygame', authMiddleware, async (req: AuthRequest, res: Res
     try {
         const user_Id = req.user?.userId
         if (!user_Id) return res.status(401).json({ error: 'Não autenticado' });
-        const game = await findTodayGame(user_Id)
+        const [game, streak] = await Promise.all([
+            findTodayGame(user_Id),
+            findUserStreak(user_Id),
+        ]);
         if (!game) {
             return res.status(200).json({
                 status: "playing",
                 attempts: [],
+                currentStreak: streak.currentStreak,
+                bestStreak: streak.bestStreak,
             });
         }
         const attempts = await findAttemptsByGameId(game.id);
@@ -109,6 +114,8 @@ app.get('/game/findtodaygame', authMiddleware, async (req: AuthRequest, res: Res
         return res.status(200).json({
             status: game.status,
             attempts: formattedAttempts,
+            currentStreak: streak.currentStreak,
+            bestStreak: streak.bestStreak,
             ...(game.status !== "playing" && game.word && { word: game.word }),
         });
     } catch (error) {
@@ -119,16 +126,24 @@ app.get('/game/findtodaygame', authMiddleware, async (req: AuthRequest, res: Res
 
 app.get('/game/history', authMiddleware, async (req: AuthRequest, res) => {
     try {
-        const userId = req.user!.userId;
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ error: 'Não autenticado' });
         const rawLimit = Number(req.query.limit);
         const rawOffset = Number(req.query.offset);
         const limit = Number.isInteger(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 50) : 10;
         const offset = Number.isInteger(rawOffset) && rawOffset >= 0 ? rawOffset : 0;
-        const history = await findUserHistory(userId, limit, offset)
-        return res.status(200).json(history)
+        const [history, streak] = await Promise.all([
+            findUserHistory(userId, limit, offset),
+            findUserStreak(userId),
+        ]);
+        return res.status(200).json({
+            ...history,
+            currentStreak: streak.currentStreak,
+            bestStreak: streak.bestStreak,
+        });
     } catch (error) {
-        console.error("Erro em POST /game/history:", error);
-        return res.status(500).json({ error: "Erro interno ao processar historico" });
+        console.error("Erro em GET /game/history:", error);
+        return res.status(500).json({ error: "Erro interno ao processar histórico" });
     }
 })
 
@@ -175,8 +190,10 @@ app.post("/game/guess", authMiddleware, async (req: AuthRequest, res) => {
         await createAttempt(game.id, validGuess, attemptNumber);
 
         const status = resolveStatus(validGuess, todayWord.word, attemptNumber);
+        let streak: { currentStreak: number; bestStreak: number } | null = null;
         if (status !== "playing") {
             await updateGameStatus(game.id, status);
+            streak = await findUserStreak(userId);
         }
         // Calcula o feedback e verifica vitória/derrota
         const feedback = checkGuess(todayWord.word, validGuess);
@@ -188,6 +205,10 @@ app.post("/game/guess", authMiddleware, async (req: AuthRequest, res) => {
             feedback,
             status,
             ...(status !== "playing" && { word: todayWord.word }),
+            ...(streak && {
+                currentStreak: streak.currentStreak,
+                bestStreak: streak.bestStreak,
+            }),
         });
     } catch (error) {
         console.error("Erro em POST /game/guess:", error);

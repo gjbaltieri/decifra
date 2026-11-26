@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import type { AuthCredentials } from '../types/api';
+import { ReleaseNotes } from './ReleaseNotes';
 
 export type AuthModalMode = 'login' | 'register';
 
@@ -110,7 +111,7 @@ export function AuthModal({
       aria-labelledby="auth-modal-title"
     >
       <div
-        className="animate-modal-in w-full max-w-md rounded-2xl border border-zinc-800/90 bg-[#18181b] p-5 shadow-2xl shadow-black/50 sm:p-7"
+        className="animate-modal-in max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-800/90 bg-[#18181b] p-5 shadow-2xl shadow-black/50 sm:p-7"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-start justify-between gap-4">
@@ -313,6 +314,7 @@ export function AuthModal({
             </p>
           )}
         </form>
+        {mode === 'login' && <div className="mt-5"><ReleaseNotes currentOnly /></div>}
       </div>
     </div>
   );

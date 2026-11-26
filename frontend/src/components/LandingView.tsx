@@ -1,3 +1,5 @@
+import { ReleaseNotes } from './ReleaseNotes';
+
 interface LandingViewProps {
   onPlay: () => void;
   onRegister: () => void;
@@ -130,6 +132,9 @@ export function LandingView({ onPlay, onRegister }: LandingViewProps) {
             Criar conta grátis
           </button>
         </p>
+        <div className="mt-6 w-full">
+          <ReleaseNotes currentOnly />
+        </div>
       </section>
     </main>
   );

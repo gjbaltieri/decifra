@@ -2,6 +2,7 @@ import type {
   ApiErrorPayload,
   AuthCredentials,
   AuthUser,
+  GameHistoryResponse,
   GuessRequest,
   GuessResponse,
   LoginResponse,
@@ -261,6 +262,11 @@ async function request<T>(
 }
 
 export const api = {
+  getGameHistory(limit: number, offset: number, signal: AbortSignal): Promise<GameHistoryResponse> {
+    const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    return request<GameHistoryResponse>(`/game/history?${query}`, { signal }, true);
+  },
+
   /**
    * POST /login
    */

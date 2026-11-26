@@ -32,7 +32,10 @@ export function useTermoGame({
 }: UseTermoGameOptions) {
   const [attempts, setAttempts] = useState<AttemptItem[]>([]);
   const [status, setStatus] = useState<GameStatus>('playing');
+  const [gameDate, setGameDate] = useState(() => new Date());
   const [secretWord, setSecretWord] = useState<string | null>(null);
+  const [currentStreak, setCurrentStreak] = useState<number>(0);
+  const [bestStreak, setBestStreak] = useState<number>(0);
 
   // Estados de carregamento da tela principal (loading, error, empty, success)
   const [isLoadingGame, setIsLoadingGame] = useState<boolean>(false);
@@ -68,7 +71,9 @@ export function useTermoGame({
     setLoadError(null);
 
     try {
+      const requestedAt = new Date();
       const data = await api.findTodayGame();
+      setGameDate(requestedAt);
       const sortedAttempts = [...(data.attempts || [])]
         .sort((a, b) => a.attemptNumber - b.attemptNumber)
         .map((item) => ({
@@ -78,6 +83,8 @@ export function useTermoGame({
 
       setAttempts(sortedAttempts);
       setStatus(data.status);
+      setCurrentStreak(data.currentStreak ?? 0);
+      setBestStreak(data.bestStreak ?? 0);
       setCurrentLetters(['', '', '', '', '']);
       setSelectedCol(0);
 
@@ -125,6 +132,8 @@ export function useTermoGame({
       setAttempts([]);
       setStatus('playing');
       setSecretWord(null);
+      setCurrentStreak(0);
+      setBestStreak(0);
       setCurrentLetters(['', '', '', '', '']);
       setSelectedCol(0);
       setLoadError(null);
@@ -223,7 +232,9 @@ export function useTermoGame({
 
     setIsSubmittingGuess(true);
     try {
+      const requestedAt = new Date();
       const result = await api.sendGuess({ guess: guessWord });
+      setGameDate(requestedAt);
       const normalizedGuess = result.guess.trim().toUpperCase();
 
       const newAttempt: AttemptItem = {
@@ -238,6 +249,14 @@ export function useTermoGame({
       setCurrentLetters(['', '', '', '', '']);
       setSelectedCol(0);
       setStatus(result.status);
+      if (typeof result.currentStreak === 'number') {
+        setCurrentStreak(result.currentStreak);
+      } else if (result.status === 'lost') {
+        setCurrentStreak(0);
+      }
+      if (typeof result.bestStreak === 'number') {
+        setBestStreak(result.bestStreak);
+      }
 
       const finalWord =
         result.word?.toUpperCase() ||
@@ -317,24 +336,13 @@ export function useTermoGame({
     return map;
   }, [attempts]);
 
-  const generateShareText = useCallback(() => {
-    const triesLabel = status === 'won' ? `${attempts.length}/6` : 'X/6';
-    const emojiRows = attempts.map((attempt) =>
-      attempt.feedback
-        .map((st) => {
-          if (st === 'correct') return '🟩';
-          if (st === 'present') return '🟨';
-          return '⬛';
-        })
-        .join('')
-    );
-    return `Joguei DECIFRA ${triesLabel}\n\n${emojiRows.join('\n')}`;
-  }, [attempts, status]);
-
   return {
     attempts,
     status,
+    gameDate,
     secretWord,
+    currentStreak,
+    bestStreak,
     isLoadingGame,
     loadError,
     currentLetters,
@@ -353,6 +361,5 @@ export function useTermoGame({
     handleBackspace,
     handleMoveCursor,
     submitGuess,
-    generateShareText,
   };
 }
